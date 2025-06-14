@@ -1,8 +1,6 @@
 #include "server.h"
 #include <netdb.h>
-#include <stddef.h>
 #include <stdio.h>
-#include <sys/socket.h>
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -13,20 +11,24 @@ int main(int argc, char *argv[]) {
 
   int binding_return;
   struct addrinfo hints, *result, *temp;
-  ssize_t nread;
-  size_t len;
+  size_t len_input;
   int socket_file_descriptor, socket_file_descriptor_2, linked_lists;
   int listening_value;
   struct sockaddr_storage client_content;
   socklen_t client_address_size;
 
-  memset(&hints, 0, sizeof(main));
+  // specifacation for the type of socket you want made
+  memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
-  hints.ai_protocol = SOCK_STREAM;
-  hints.ai_flags = 0;
+  hints.ai_flags = AI_PASSIVE;
 
   linked_lists = getaddrinfo(NULL, argv[1], &hints, &result);
+
+  if (linked_lists != 0) {
+    fprintf(stderr, "Something went wrong while using getaddrinfo : %s",
+            gai_strerror(linked_lists));
+  }
 
   for (temp = result; temp != NULL; temp = temp->ai_next) {
     socket_file_descriptor =
@@ -55,17 +57,28 @@ int main(int argc, char *argv[]) {
             "Something went wrong cause it is returning an empty list!\n");
     // exit(EXIT_FAILURE);
   }
+
+  listening_value = listen(socket_file_descriptor, BUFF_LEN);
+
+  if (listening_value != 0) {
+    fprintf(
+        stderr,
+        "Something went wrong while listening to the client hence exiting\n");
+    exit(EXIT_FAILURE);
+  }
+
+  client_address_size = sizeof client_content;
+  socket_file_descriptor_2 =
+      accept(socket_file_descriptor, (struct sockaddr *)&client_content,
+             &client_address_size);
+
+  if (socket_file_descriptor_2 != 0) {
+    fprintf(stderr,
+            "Something went wrong while accepting the client on the socket \n");
+  } else {
+    printf("TCP server socket established\n");
+  }
+
   for (;;) {
-    listening_value = listen(socket_file_descriptor, BUFF_LEN);
-
-    if (listening_value != 0) {
-      fprintf(stderr, "Something went wrong while listening to the client \n");
-      continue;
-    }
-
-    client_address_size = sizeof client_content;
-    socket_file_descriptor_2 =
-        accept(socket_file_descriptor, (struct sockaddr *)&client_content,
-               &client_address_size);
   }
 }
