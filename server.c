@@ -78,7 +78,4 @@ int main(int argc, char *argv[]) {
   } else {
     printf("TCP server socket established\n");
   }
-
-  for (;;) {
-  }
 }
