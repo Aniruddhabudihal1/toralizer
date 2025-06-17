@@ -1,5 +1,4 @@
 #include "header.h"
-#include <stdio.h>
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -17,7 +16,7 @@ int main(int argc, char *argv[]) {
   int listening_value;
   ssize_t sending_value;
   struct sockaddr_in client_address;
-  ssize_t length_of_content_to_be_sent = 20;
+  ssize_t length_of_content_to_be_sent = 80;
   socklen_t client_address_size;
   client_address_size = sizeof client_address.sin_addr;
 
@@ -77,8 +76,7 @@ int main(int argc, char *argv[]) {
   }
   printf("now listening\n");
 
-  // while (1)
-  { // main accept() loop
+  while (1) { // main accept() loop
     socket_file_descriptor_2 = accept(
         socket_file_descriptor, (struct sockaddr *)&client_address.sin_addr,
         &client_address_size);
@@ -90,11 +88,6 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Establishing connection with the client\n");
-
-    printf("The accepting socket created sucessfully\nand the address it is "
-           "listening on is %s\n",
-           inet_ntop(client_address.sin_family, &(client_address.sin_addr),
-                     cli_add, BUFF_LEN));
 
     // so upto this point we have gotten the client address and now we need to
     // cater to it this is done by the server by using fork to create new
