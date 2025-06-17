@@ -1,5 +1,4 @@
-#include "server.h"
-#include <netdb.h>
+#include "header.h"
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -9,17 +8,22 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  int yes = 1;
+  char cli_add[BUFF_LEN];
   int binding_return;
   struct addrinfo hints, *result, *temp;
-  size_t len_input;
+  // size_t len_input;
   int socket_file_descriptor, socket_file_descriptor_2, linked_lists;
   int listening_value;
-  struct sockaddr_storage client_content;
+  ssize_t sending_value;
+  struct sockaddr_in client_address;
+  ssize_t length_of_content_to_be_sent = 20;
   socklen_t client_address_size;
+  client_address_size = sizeof client_address.sin_addr;
 
   // specifacation for the type of socket you want made
   memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
@@ -39,13 +43,18 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
+    if (setsockopt(socket_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &yes,
+                   sizeof(int)) == -1) {
+      fprintf(stderr, "Something went wrong while performing setsockopt\n");
+    }
+
     binding_return =
         bind(socket_file_descriptor, temp->ai_addr, temp->ai_addrlen);
 
     if (binding_return == 0) {
-      continue;
-    } else {
       break;
+    } else {
+      continue;
     }
     close(socket_file_descriptor);
   }
@@ -55,7 +64,7 @@ int main(int argc, char *argv[]) {
   if (temp == NULL) {
     fprintf(stderr,
             "Something went wrong cause it is returning an empty list!\n");
-    // exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
   }
 
   listening_value = listen(socket_file_descriptor, BUFF_LEN);
@@ -64,18 +73,45 @@ int main(int argc, char *argv[]) {
     fprintf(
         stderr,
         "Something went wrong while listening to the client hence exiting\n");
-    exit(EXIT_FAILURE);
+    exit(1);
   }
+  printf("now listening\n");
 
-  client_address_size = sizeof client_content;
-  socket_file_descriptor_2 =
-      accept(socket_file_descriptor, (struct sockaddr *)&client_content,
-             &client_address_size);
+  // while (1)
+  { // main accept() loop
+    socket_file_descriptor_2 = accept(
+        socket_file_descriptor, (struct sockaddr *)&client_address.sin_addr,
+        &client_address_size);
 
-  if (socket_file_descriptor_2 != 0) {
-    fprintf(stderr,
-            "Something went wrong while accepting the client on the socket \n");
-  } else {
-    printf("TCP server socket established\n");
+    if (socket_file_descriptor_2 == -1) {
+      fprintf(stderr,
+              "An errror occured while making the second file descriptor \n");
+      exit(EXIT_FAILURE);
+    }
+
+    printf("Establishing connection with the client\n");
+
+    printf("The accepting socket created sucessfully\nand the address it is "
+           "listening on is %s\n",
+           inet_ntop(client_address.sin_family, &(client_address.sin_addr),
+                     cli_add, BUFF_LEN));
+
+    // so upto this point we have gotten the client address and now we need to
+    // cater to it this is done by the server by using fork to create new
+    // children that handle these requests
+
+    if (!fork()) {
+      close(socket_file_descriptor);
+      sending_value =
+          send(socket_file_descriptor_2, "Namaskara from the server\n",
+               length_of_content_to_be_sent, 0);
+      if (sending_value == -1) {
+        fprintf(stderr, "An error occured while sending data to the client\n");
+        close(socket_file_descriptor_2);
+        exit(EXIT_FAILURE);
+      }
+      close(socket_file_descriptor_2);
+    }
   }
+  return 0;
 }

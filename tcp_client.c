@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
         socket(temp->ai_family, temp->ai_socktype, temp->ai_protocol);
 
     if (socket_file_descriptor == -1) {
-      fprintf(stderr, "Something went wrong while assigning the socket as it "
-                      "returned -1 \n");
+      fprintf(stderr,
+              "Something went wrong while assigning the socket as it \n");
       break;
     }
 
