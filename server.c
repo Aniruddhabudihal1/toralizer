@@ -1,4 +1,8 @@
 #include "header.h"
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <sys/socket.h>
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -98,6 +102,9 @@ int main(int argc, char *argv[]) {
       sending_value =
           send(socket_file_descriptor_2, "Namaskara from the server\n",
                length_of_content_to_be_sent, 0);
+      inet_ntop(AF_INET, (struct sockaddr *)&(client_address).sin_addr, cli_add,
+                BUFF_LEN);
+      printf("The connection is coming from address : %s \n", cli_add);
       if (sending_value == -1) {
         fprintf(stderr, "An error occured while sending data to the client\n");
         close(socket_file_descriptor_2);
