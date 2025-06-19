@@ -1,6 +1,7 @@
 #include "header.h"
 
 void serve(const char *port);
+void socks();
 
 int main(int argc, char *argv[]) {
   serve(argv[1]);
@@ -144,4 +145,16 @@ void serve(const char *port) {
     */
   }
   close(socket_file_descriptor_2);
+}
+
+// implementation of socks protcol
+void socks() {
+  // general structure of a socks request
+
+  typedef struct socks_message_format {
+    int version_number;
+    int command_code;
+    long int destination_ip;
+    int port;
+  } sock;
 }

@@ -11,3 +11,6 @@
 #include <unistd.h>
 
 #define BUFF_LEN 200
+#define BUFF_SIZE 200
+#define port_tcp "1080"
+#define proxy_address "127.0.0.1"

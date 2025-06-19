@@ -1,41 +1,109 @@
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "header.h"
+#include <stddef.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 
-#define BUFF_SIZE 200
+struct something {
+  int socket_file_descriptor;
+  struct addrinfo *temp;
+};
+
+struct sock_return {
+  int version_number;
+  int command_code;
+  int destiantion_port;
+  char destination_ip;
+};
+
+void client_call(int version_number, int command_code, int destination_port,
+                 struct sockaddr stuff);
+struct something socket_maker(struct addrinfo *x, struct addrinfo *y);
+
+/*
+ *  Format for the socks message to be sent to the proxy server
+ *
+ *                +----+----+----+----+----+----+----+----+----+----+....+----+
+ *                | VN | CD | DSTPORT |      DSTIP        | USERID       |NULL|
+ *                +----+----+----+----+----+----+----+----+----+----+....+----+
+ *   # of bytes:     1    1      2              4           variable        1
+ *
+ *
+ *
+ * */
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
     fprintf(stderr,
-            "Require a minimum of 3 inputs in the command line of the format : "
-            "<executable> <address> <port number> <messages>\n");
+            "Require a minimum of 2 inputs in the command line of the format : "
+            "<executable> <address> <port number>\n");
     exit(EXIT_FAILURE);
   }
 
-  int linked_list_values, socket_file_descriptor, connection_status,
-      no_of_bytes_returned, no_of_bytes_sent;
-  ssize_t len;
-  char *buf;
+  int version_number, command_code;
+  struct sockaddr destination_ip;
+  char *destination_port;
+
+  printf("Enter the version number you would like to use for the socks "
+         "connection\nyour options are (only 4 as of now more options will be "
+         "provided later) : ");
+  scanf("%d", &version_number);
+
+  strcpy(destination_ip.sa_data, argv[1]);
+  destination_ip.sa_family = AF_INET;
+
+  strcpy(destination_port, argv[2]);
+}
+
+void client_call(int version_number, int command_code, int destination_port,
+                 struct sockaddr destination_stuff) {
+  int linked_list_values, socket_file_descriptor, no_of_bytes_returned,
+      no_of_bytes_sent;
+  socklen_t len = sizeof destination_stuff.sa_data;
+
   char buffer[30];
   struct addrinfo main;
   struct addrinfo *temp, *result;
 
   memset(&main, 0, sizeof(main));
-  main.ai_socktype = AF_UNSPEC;
-  main.ai_family = AF_UNSPEC;
+  main.ai_socktype = AF_INET;
+  main.ai_family = AF_INET;
   main.ai_protocol = 0;
   main.ai_flags = 0;
 
-  if ((linked_list_values = getaddrinfo(argv[1], argv[2], &main, &result)) !=
-      0) {
+  if ((linked_list_values = getaddrinfo((const char *)proxy_address, port_tcp,
+                                        &main, &result)) != 0) {
     fprintf(stderr, "Error for getaddrinfo : %s\n",
             gai_strerror(linked_list_values));
   }
 
+  struct something x = socket_maker(temp, result);
+
+  socket_file_descriptor = x.socket_file_descriptor;
+  temp = x.temp;
+
+  if (temp == NULL) {
+    fprintf(stderr, "The information being returned is empty !\n");
+  }
+  freeaddrinfo(temp);
+
+  // The socks stuff gets sent from here
+
+  struct sock_return sendtoserver;
+  sendtoserver.command_code = command_code;
+  sendtoserver.destiantion_port = destination_port;
+  strcpy(&sendtoserver.destination_ip, destination_stuff.sa_data);
+  sendtoserver.version_number = version_number;
+
+  size_t lenn = sizeof sendtoserver;
+
+  sendto(socket_file_descriptor, (const char)(struct sendtoserver), lenn, 0,
+         (struct sockaddr *)&destination_stuff.sa_data, len);
+
+  close(socket_file_descriptor);
+}
+
+struct something socket_maker(struct addrinfo *temp, struct addrinfo *result) {
+  int socket_file_descriptor;
+  int connection_status;
   for (temp = result; temp != NULL; temp = temp->ai_next) {
     socket_file_descriptor =
         socket(temp->ai_family, temp->ai_socktype, temp->ai_protocol);
@@ -54,34 +122,8 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-
-  if (temp == NULL) {
-    fprintf(stderr, "The information being returned is empty !\n");
-  }
-  freeaddrinfo(temp);
-
-  for (int i = 3; i < argc; i++) {
-    len = strlen(argv[i]) + 1;
-    if (len > BUFF_SIZE) {
-      printf("Length of the message exceeds the buffer length , so discarding "
-             "this message :\n%s\n",
-             argv[i]);
-      continue;
-    }
-    buf = argv[i];
-    if ((no_of_bytes_sent = send(socket_file_descriptor, buf, len, 0) == 0)) {
-      fprintf(stderr,
-              "Something went wrong while sending the data to the server\n");
-    }
-
-    if ((no_of_bytes_returned =
-             recv(socket_file_descriptor, buffer, sizeof(buffer), 0) == 0)) {
-      fprintf(
-          stderr,
-          "Something went wrong while recieving the data from the server\n");
-    }
-    printf("Message sent by the server : %s\n", buffer);
-  }
-  close(socket_file_descriptor);
-  return 0;
+  struct something s;
+  s.socket_file_descriptor = socket_file_descriptor;
+  s.temp = temp;
+  return s;
 }
