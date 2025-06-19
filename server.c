@@ -1,21 +1,18 @@
 #include "header.h"
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <sys/socket.h>
+
+void serve(const char *port);
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    fprintf(stderr, "Require 2 command line inputs in the format : %s <port>\n",
-            argv[0]);
-    exit(EXIT_FAILURE);
-  }
+  serve(argv[1]);
+  return 0;
+}
 
+void serve(const char *port) {
   int yes = 1;
   char cli_add[BUFF_LEN];
   int binding_return;
   struct addrinfo hints, *result, *temp;
-  // size_t len_input;
+
   int socket_file_descriptor, socket_file_descriptor_2, linked_lists;
   int listening_value;
   ssize_t sending_value;
@@ -24,13 +21,17 @@ int main(int argc, char *argv[]) {
   socklen_t client_address_size;
   client_address_size = sizeof client_address.sin_addr;
 
-  // specifacation for the type of socket you want made
+  char client_input[80];
+  size_t client_input_length = 80;
+  char client_output[40];
+  ssize_t nread;
+
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  linked_lists = getaddrinfo(NULL, argv[1], &hints, &result);
+  linked_lists = getaddrinfo(NULL, port, &hints, &result);
 
   if (linked_lists != 0) {
     fprintf(stderr, "Something went wrong while using getaddrinfo : %s",
@@ -93,25 +94,54 @@ int main(int argc, char *argv[]) {
 
     printf("Establishing connection with the client\n");
 
-    // so upto this point we have gotten the client address and now we need to
-    // cater to it this is done by the server by using fork to create new
-    // children that handle these requests
+    nread =
+        recvfrom(socket_file_descriptor_2, client_input, client_input_length, 0,
+                 (struct sockaddr *)&client_address, (&client_address_size));
 
-    if (!fork()) {
-      close(socket_file_descriptor);
-      sending_value =
-          send(socket_file_descriptor_2, "Namaskara from the server\n",
-               length_of_content_to_be_sent, 0);
-      inet_ntop(AF_INET, (struct sockaddr *)&(client_address).sin_addr, cli_add,
-                BUFF_LEN);
-      printf("The connection is coming from address : %s \n", cli_add);
-      if (sending_value == -1) {
-        fprintf(stderr, "An error occured while sending data to the client\n");
-        close(socket_file_descriptor_2);
-        exit(EXIT_FAILURE);
-      }
-      close(socket_file_descriptor_2);
+    client_input[nread] = '\0';
+    client_input[strcspn(client_input, "\r\n")] = '\0';
+
+    printf("Received the clients input \n");
+
+    if (strcmp(client_input, "Max Verstappen") == 0) {
+      strcpy(client_output, "Red Bull Racing");
+      sendto(socket_file_descriptor_2, client_output, sizeof(client_output),
+             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
+    } else if (strcmp(client_input, "Sebastien Vettel") == 0) {
+      strcpy(client_output, "Aston Martin");
+      sendto(socket_file_descriptor_2, client_output, sizeof(client_output),
+             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
+    } else if (strcmp(client_input, "Fernando Alonso") == 0) {
+      strcpy(client_output, "Renault");
+      sendto(socket_file_descriptor_2, client_output, sizeof client_output,
+             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
+    } else {
+      strcpy(client_output, "Driver not recognized\n");
+      sendto(socket_file_descriptor_2, client_output, sizeof client_output,
+             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
     }
+    close(socket_file_descriptor_2);
+    /*
+        // so upto this point we have gotten the client address and now we need
+       to
+        // cater to it this is done by the server by using fork to create new
+        // children that handle these requests
+
+        if (!fork()) {
+          close(socket_file_descriptor);
+          sending_value =
+              send(socket_file_descriptor_2, "Namaskara from the server\n",
+                   length_of_content_to_be_sent, 0);
+          inet_ntop(AF_INET, (struct sockaddr *)&(client_address).sin_addr,
+       cli_add, BUFF_LEN); printf("The connection is coming from address : %s
+       \n", cli_add); if (sending_value == -1) { fprintf(stderr, "An error
+       occured while sending data to the client\n");
+            close(socket_file_descriptor_2);
+            exit(EXIT_FAILURE);
+          }
+          close(socket_file_descriptor_2);
+        }
+    */
   }
-  return 0;
+  close(socket_file_descriptor_2);
 }

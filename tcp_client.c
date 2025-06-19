@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
       no_of_bytes_returned, no_of_bytes_sent;
   ssize_t len;
   char *buf;
-  char *buffer[BUFF_SIZE];
+  char buffer[30];
   struct addrinfo main;
   struct addrinfo *temp, *result;
 
@@ -75,11 +75,12 @@ int main(int argc, char *argv[]) {
     }
 
     if ((no_of_bytes_returned =
-             recv(socket_file_descriptor, buffer, BUFF_SIZE, 0) == 0)) {
+             recv(socket_file_descriptor, buffer, sizeof(buffer), 0) == 0)) {
       fprintf(
           stderr,
           "Something went wrong while recieving the data from the server\n");
     }
+    printf("Message sent by the server : %s\n", buffer);
   }
   close(socket_file_descriptor);
   return 0;
