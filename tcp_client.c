@@ -1,6 +1,4 @@
 #include "header.h"
-#include <stddef.h>
-#include <sys/socket.h>
 
 struct something {
   int socket_file_descriptor;
@@ -31,16 +29,16 @@ struct something socket_maker(struct addrinfo *x, struct addrinfo *y);
  * */
 
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
+  if (argc < 2) {
     fprintf(stderr,
             "Require a minimum of 2 inputs in the command line of the format : "
-            "<executable> <address> <port number>\n");
+            "<executable> <address>\n");
     exit(EXIT_FAILURE);
   }
 
   int version_number, command_code;
   struct sockaddr destination_ip;
-  char *destination_port;
+  int destination_port;
 
   printf("Enter the version number you would like to use for the socks "
          "connection\nyour options are (only 4 as of now more options will be "
@@ -48,9 +46,14 @@ int main(int argc, char *argv[]) {
   scanf("%d", &version_number);
 
   strcpy(destination_ip.sa_data, argv[1]);
-  destination_ip.sa_family = AF_INET;
+  printf("works here\n");
 
-  strcpy(destination_port, argv[2]);
+  printf("Enter the destination port number :\n");
+  scanf("%d", &destination_port);
+
+  client_call(version_number, command_code, destination_port, destination_ip);
+
+  return 0;
 }
 
 void client_call(int version_number, int command_code, int destination_port,
@@ -59,6 +62,7 @@ void client_call(int version_number, int command_code, int destination_port,
       no_of_bytes_sent;
   socklen_t len = sizeof destination_stuff.sa_data;
 
+  int sending_status;
   char buffer[30];
   struct addrinfo main;
   struct addrinfo *temp, *result;
@@ -86,17 +90,48 @@ void client_call(int version_number, int command_code, int destination_port,
   freeaddrinfo(temp);
 
   // The socks stuff gets sent from here
+  /*
+    struct sock_return sendtoserver;
+    sendtoserver.command_code = command_code;
+    sendtoserver.destiantion_port = destination_port;
+    strcpy(&sendtoserver.destination_ip, destination_stuff.sa_data);
+    sendtoserver.version_number = version_number;
+  */
+  sending_status = sendto(socket_file_descriptor, (const void *)&version_number,
+                          sizeof(version_number), 0,
+                          (struct sockaddr *)&destination_stuff, len);
 
-  struct sock_return sendtoserver;
-  sendtoserver.command_code = command_code;
-  sendtoserver.destiantion_port = destination_port;
-  strcpy(&sendtoserver.destination_ip, destination_stuff.sa_data);
-  sendtoserver.version_number = version_number;
+  if (sending_status == -1) {
+    fprintf(stderr, "Something went wrong while sending the version "
+                    "number\nplease try again\n");
+    exit(EXIT_FAILURE);
+  } else {
+    printf("version number sent successfully to the server\n");
+  }
 
-  size_t lenn = sizeof sendtoserver;
+  sending_status = sendto(
+      socket_file_descriptor, (const void *)&destination_port,
+      sizeof(destination_port), 0, (struct sockaddr *)&destination_stuff, len);
 
-  sendto(socket_file_descriptor, (const char)(struct sendtoserver), lenn, 0,
-         (struct sockaddr *)&destination_stuff.sa_data, len);
+  if (sending_status == -1) {
+    fprintf(stderr, "Something went wrong while sending the destination "
+                    "port\nplease try again\n");
+    exit(EXIT_FAILURE);
+  } else {
+    printf("destination port sent successfully to the server\n");
+  }
+
+  sending_status = sendto(
+      socket_file_descriptor, (const void *)&destination_port,
+      sizeof(destination_port), 0, (struct sockaddr *)&destination_stuff, len);
+
+  if (sending_status == -1) {
+    fprintf(stderr, "Something went wrong while sending the destination "
+                    "port\nplease try again\n");
+    exit(EXIT_FAILURE);
+  } else {
+    printf("destination port sent successfully to the server\n");
+  }
 
   close(socket_file_descriptor);
 }
