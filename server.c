@@ -104,24 +104,6 @@ void serve(const char *port) {
 
     printf("Received the clients input \n");
 
-    if (strcmp(client_input, "Max Verstappen") == 0) {
-      strcpy(client_output, "Red Bull Racing");
-      sendto(socket_file_descriptor_2, client_output, sizeof(client_output),
-             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
-    } else if (strcmp(client_input, "Sebastien Vettel") == 0) {
-      strcpy(client_output, "Aston Martin");
-      sendto(socket_file_descriptor_2, client_output, sizeof(client_output),
-             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
-    } else if (strcmp(client_input, "Fernando Alonso") == 0) {
-      strcpy(client_output, "Renault");
-      sendto(socket_file_descriptor_2, client_output, sizeof client_output,
-             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
-    } else {
-      strcpy(client_output, "Driver not recognized\n");
-      sendto(socket_file_descriptor_2, client_output, sizeof client_output,
-             MSG_EOR, (struct sockaddr *)&client_address, client_address_size);
-    }
-    close(socket_file_descriptor_2);
     /*
         // so upto this point we have gotten the client address and now we need
        to

@@ -1,15 +1,10 @@
 #include "header.h"
+#include <stdio.h>
+#include <sys/socket.h>
 
 struct something {
   int socket_file_descriptor;
   struct addrinfo *temp;
-};
-
-struct sock_return {
-  int version_number;
-  int command_code;
-  int destiantion_port;
-  char destination_ip;
 };
 
 void client_call(int version_number, int command_code, int destination_port,
@@ -58,18 +53,20 @@ int main(int argc, char *argv[]) {
 
 void client_call(int version_number, int command_code, int destination_port,
                  struct sockaddr destination_stuff) {
-  int linked_list_values, socket_file_descriptor, no_of_bytes_returned,
-      no_of_bytes_sent;
-  socklen_t len = sizeof destination_stuff.sa_data;
+  int linked_list_values, socket_file_descriptor;
+
+  struct sockaddr dest;
+  strcpy(dest.sa_data, proxy_address);
+  socklen_t len = sizeof dest.sa_data;
 
   int sending_status;
-  char buffer[30];
+
   struct addrinfo main;
   struct addrinfo *temp, *result;
 
   memset(&main, 0, sizeof(main));
-  main.ai_socktype = AF_INET;
-  main.ai_family = AF_INET;
+  main.ai_socktype = AF_UNSPEC;
+  main.ai_family = AF_UNSPEC;
   main.ai_protocol = 0;
   main.ai_flags = 0;
 
@@ -88,18 +85,22 @@ void client_call(int version_number, int command_code, int destination_port,
     fprintf(stderr, "The information being returned is empty !\n");
   }
   freeaddrinfo(temp);
+  printf("working till just before sendto\n");
+  sending_status =
+      sendto(socket_file_descriptor, (const void *)&command_code,
+             sizeof(command_code), 0, temp->ai_addr, temp->ai_addrlen);
 
-  // The socks stuff gets sent from here
-  /*
-    struct sock_return sendtoserver;
-    sendtoserver.command_code = command_code;
-    sendtoserver.destiantion_port = destination_port;
-    strcpy(&sendtoserver.destination_ip, destination_stuff.sa_data);
-    sendtoserver.version_number = version_number;
-  */
-  sending_status = sendto(socket_file_descriptor, (const void *)&version_number,
-                          sizeof(version_number), 0,
-                          (struct sockaddr *)&destination_stuff, len);
+  if (sending_status == -1) {
+    fprintf(stderr, "Something went wrong while sending the command"
+                    "code\nplease try again\n");
+    exit(EXIT_FAILURE);
+  } else {
+    printf("command code sent successfully to the server\n");
+  }
+
+  sending_status =
+      sendto(socket_file_descriptor, (const void *)&version_number,
+             sizeof(version_number), 0, temp->ai_addr, temp->ai_addrlen);
 
   if (sending_status == -1) {
     fprintf(stderr, "Something went wrong while sending the version "
@@ -109,9 +110,9 @@ void client_call(int version_number, int command_code, int destination_port,
     printf("version number sent successfully to the server\n");
   }
 
-  sending_status = sendto(
-      socket_file_descriptor, (const void *)&destination_port,
-      sizeof(destination_port), 0, (struct sockaddr *)&destination_stuff, len);
+  sending_status =
+      sendto(socket_file_descriptor, (const void *)&destination_port,
+             sizeof(destination_port), 0, temp->ai_addr, temp->ai_addrlen);
 
   if (sending_status == -1) {
     fprintf(stderr, "Something went wrong while sending the destination "
@@ -122,15 +123,15 @@ void client_call(int version_number, int command_code, int destination_port,
   }
 
   sending_status = sendto(
-      socket_file_descriptor, (const void *)&destination_port,
-      sizeof(destination_port), 0, (struct sockaddr *)&destination_stuff, len);
+      socket_file_descriptor, (const void *)&destination_stuff.sa_data,
+      sizeof(destination_stuff.sa_data), 0, temp->ai_addr, temp->ai_addrlen);
 
   if (sending_status == -1) {
     fprintf(stderr, "Something went wrong while sending the destination "
-                    "port\nplease try again\n");
+                    "server\nplease try again\n");
     exit(EXIT_FAILURE);
   } else {
-    printf("destination port sent successfully to the server\n");
+    printf("destination server sent successfully to the server\n");
   }
 
   close(socket_file_descriptor);
