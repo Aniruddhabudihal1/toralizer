@@ -1,6 +1,6 @@
 #include "header.h"
 #include <stdio.h>
-#include <sys/socket.h>
+#include <string.h>
 
 struct something {
   int socket_file_descriptor;
@@ -54,10 +54,14 @@ int main(int argc, char *argv[]) {
 void client_call(int version_number, int command_code, int destination_port,
                  struct sockaddr destination_stuff) {
   int linked_list_values, socket_file_descriptor;
-
+  int fifo_descriptor;
   struct sockaddr dest;
   strcpy(dest.sa_data, proxy_address);
   socklen_t len = sizeof dest.sa_data;
+
+  char *buf[20];
+
+  strcpy(*buf, destination_stuff.sa_data);
 
   int sending_status;
 
@@ -85,55 +89,88 @@ void client_call(int version_number, int command_code, int destination_port,
     fprintf(stderr, "The information being returned is empty !\n");
   }
   freeaddrinfo(temp);
-  printf("working till just before sendto\n");
-  sending_status =
-      sendto(socket_file_descriptor, (const void *)&command_code,
-             sizeof(command_code), 0, temp->ai_addr, temp->ai_addrlen);
+  /*
 
-  if (sending_status == -1) {
-    fprintf(stderr, "Something went wrong while sending the command"
-                    "code\nplease try again\n");
-    exit(EXIT_FAILURE);
+  This part of the code tried to send the data directly through the socket
+  instead of the FIFO file
+
+    sending_status =
+        sendto(socket_file_descriptor, (const void *)&command_code,
+               sizeof(command_code), 0, temp->ai_addr, temp->ai_addrlen);
+
+    if (sending_status == -1) {
+      fprintf(stderr, "Something went wrong while sending the command"
+                      "code\nplease try again\n");
+      exit(EXIT_FAILURE);
+    } else {
+      printf("command code sent successfully to the server\n");
+    }
+
+    sending_status =
+        sendto(socket_file_descriptor, (const void *)&version_number,
+               sizeof(version_number), 0, temp->ai_addr, temp->ai_addrlen);
+
+    if (sending_status == -1) {
+      fprintf(stderr, "Something went wrong while sending the version "
+                      "number\nplease try again\n");
+      exit(EXIT_FAILURE);
+    } else {
+      printf("version number sent successfully to the server\n");
+    }
+
+    sending_status =
+        sendto(socket_file_descriptor, (const void *)&destination_port,
+               sizeof(destination_port), 0, temp->ai_addr, temp->ai_addrlen);
+
+    if (sending_status == -1) {
+      fprintf(stderr, "Something went wrong while sending the destination "
+                      "port\nplease try again\n");
+      exit(EXIT_FAILURE);
+    } else {
+      printf("destination port sent successfully to the server\n");
+    }
+
+    sending_status = sendto(
+        socket_file_descriptor, (const void *)&destination_stuff.sa_data,
+        sizeof(destination_stuff.sa_data), 0, temp->ai_addr, temp->ai_addrlen);
+
+    if (sending_status == -1) {
+      fprintf(stderr, "Something went wrong while sending the destination "
+                      "server\nplease try again\n");
+      exit(EXIT_FAILURE);
+    } else {
+      printf("destination server sent successfully to the server\n");
+    }
+  */
+
+  // making the fifo file to send the client inputs into it so that server can
+  // read it
+
+  // pathname for the first FIFO1 which sends the content to the server
+  const char *pathname = "FIFO1";
+  mode_t mode_for_fifo = 0666;
+
+  if (mkfifo(pathname, mode_for_fifo) == -1) {
+    fprintf(stderr,
+            "Something went wrong while making the FIFO file or the file has "
+            "alredy been created\nrun ls in the terminal and check\n");
+
   } else {
-    printf("command code sent successfully to the server\n");
+    printf("FIFO file has been created\n");
   }
 
-  sending_status =
-      sendto(socket_file_descriptor, (const void *)&version_number,
-             sizeof(version_number), 0, temp->ai_addr, temp->ai_addrlen);
+  fifo_descriptor = open(pathname, O_RDWR);
 
-  if (sending_status == -1) {
-    fprintf(stderr, "Something went wrong while sending the version "
-                    "number\nplease try again\n");
-    exit(EXIT_FAILURE);
+  char buffer[89];
+
+  sprintf(buffer, "%d %d %d %s", version_number, command_code, destination_port,
+          *buf);
+  ssize_t size_of_buffer = sizeof buffer;
+  if (write(fifo_descriptor, buffer, size_of_buffer) == -1) {
+    fprintf(stderr, "something went wrong while writing to the FIFO1 fil\n");
   } else {
-    printf("version number sent successfully to the server\n");
+    printf("Written successfully to FIFO1\n");
   }
-
-  sending_status =
-      sendto(socket_file_descriptor, (const void *)&destination_port,
-             sizeof(destination_port), 0, temp->ai_addr, temp->ai_addrlen);
-
-  if (sending_status == -1) {
-    fprintf(stderr, "Something went wrong while sending the destination "
-                    "port\nplease try again\n");
-    exit(EXIT_FAILURE);
-  } else {
-    printf("destination port sent successfully to the server\n");
-  }
-
-  sending_status = sendto(
-      socket_file_descriptor, (const void *)&destination_stuff.sa_data,
-      sizeof(destination_stuff.sa_data), 0, temp->ai_addr, temp->ai_addrlen);
-
-  if (sending_status == -1) {
-    fprintf(stderr, "Something went wrong while sending the destination "
-                    "server\nplease try again\n");
-    exit(EXIT_FAILURE);
-  } else {
-    printf("destination server sent successfully to the server\n");
-  }
-
   close(socket_file_descriptor);
 }
 
