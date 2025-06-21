@@ -1,7 +1,6 @@
 #include "header.h"
 
 void serve(const char *port);
-void socks();
 
 int main(int argc, char *argv[]) {
   serve(argv[1]);
@@ -13,7 +12,7 @@ void serve(const char *port) {
   char cli_add[BUFF_LEN];
   int binding_return;
   struct addrinfo hints, *result, *temp;
-
+  ssize_t nread;
   int socket_file_descriptor, socket_file_descriptor_2, linked_lists;
   int listening_value;
   ssize_t sending_value;
@@ -25,7 +24,9 @@ void serve(const char *port) {
   char client_input[80];
   size_t client_input_length = 80;
   char client_output[40];
-  ssize_t nread;
+  int fifo_descriptor;
+  char buffer[100];
+  ssize_t buf_size = sizeof buffer;
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;
@@ -95,15 +96,14 @@ void serve(const char *port) {
 
     printf("Establishing connection with the client\n");
 
-    nread =
-        recvfrom(socket_file_descriptor_2, client_input, client_input_length, 0,
-                 (struct sockaddr *)&client_address, (&client_address_size));
+    fifo_descriptor = open("FIFO1", O_RDONLY);
 
-    client_input[nread] = '\0';
-    client_input[strcspn(client_input, "\r\n")] = '\0';
-
-    printf("Received the clients input \n");
-
+    if (read(fifo_descriptor, buffer, buf_size) < 0) {
+      fprintf(stderr, "something went wrong while reading the fifo file\n");
+      exit(EXIT_FAILURE);
+    } else {
+      printf("%s\n", buffer);
+    }
     /*
         // so upto this point we have gotten the client address and now we need
        to
@@ -126,17 +126,6 @@ void serve(const char *port) {
         }
     */
   }
+  close(fifo_descriptor);
   close(socket_file_descriptor_2);
-}
-
-// implementation of socks protcol
-void socks() {
-  // general structure of a socks request
-
-  typedef struct socks_message_format {
-    int version_number;
-    int command_code;
-    long int destination_ip;
-    int port;
-  } sock;
 }
