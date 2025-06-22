@@ -5,13 +5,6 @@ struct something {
   struct addrinfo *temp;
 };
 
-typedef struct return_format {
-  int versionnum;
-  int commandcode;
-  int destinationport;
-  struct sockaddr dest_addr;
-} rf;
-
 void client_call(int version_number, int command_code, int destination_port,
                  struct sockaddr stuff);
 struct something socket_maker(struct addrinfo *x, struct addrinfo *y);
@@ -29,10 +22,10 @@ struct something socket_maker(struct addrinfo *x, struct addrinfo *y);
  * */
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  if (argc < 3) {
     fprintf(stderr,
-            "Require a minimum of 2 inputs in the command line of the format : "
-            "<executable> <address>\n");
+            "Require a minimum of 3 inputs in the command line of the format : "
+            "<executable> <ip address> <site URL>\n");
     exit(EXIT_FAILURE);
   }
 
@@ -58,6 +51,7 @@ int main(int argc, char *argv[]) {
 
 void client_call(int version_number, int command_code, int destination_port,
                  struct sockaddr destination_stuff) {
+
   int linked_list_values, socket_file_descriptor;
   int fifo_descriptor;
   struct sockaddr dest;
@@ -84,7 +78,7 @@ void client_call(int version_number, int command_code, int destination_port,
     fprintf(stderr, "Error for getaddrinfo : %s\n",
             gai_strerror(linked_list_values));
   }
-
+  printf("getaddrinfo works here if this is running\n");
   struct something x = socket_maker(temp, result);
 
   socket_file_descriptor = x.socket_file_descriptor;
@@ -151,7 +145,12 @@ void client_call(int version_number, int command_code, int destination_port,
   } else {
     printf("destination server sent to the server\n");
   }
-
+  /*
+    if (write(fifo_descriptor, &url, sizeof(url[30])) < 0) {
+      fprintf(stderr, "something went wrong while writing the destination URL to
+    " "the server\n"); } else { printf("destination URL sent to the server\n");
+    }
+  */
   /*
     char buffer[89];
 
