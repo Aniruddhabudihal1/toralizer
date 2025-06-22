@@ -114,14 +114,6 @@ void client_call(int version_number, int command_code, int destination_port,
 
   fifo_descriptor = open(pathname, O_RDWR);
 
-  /*
-  if (write(fifo_descriptor, (char*)returning, 89) == -1) {
-    fprintf(stderr, "something went wrong while writing to the FIFO1 fil\n");
-  } else {
-    printf("Written successfully to FIFO1\nexiting now\n");
-  }
-  */
-
   if (write(fifo_descriptor, &version_number, sizeof(int)) < 0) {
     fprintf(stderr, "something went wrong while writing the version number to "
                     "the server\n");
@@ -152,22 +144,6 @@ void client_call(int version_number, int command_code, int destination_port,
   } else {
     printf("destination server sent to the server\n");
   }
-  /*
-    if (write(fifo_descriptor, &url, sizeof(url[30])) < 0) {
-      fprintf(stderr, "something went wrong while writing the destination URL to
-    " "the server\n"); } else { printf("destination URL sent to the server\n");
-    }
-  */
-  /*
-    char buffer[89];
-
-    sprintf(buffer, "%d %d %d %s", version_number, command_code,
-    destination_port, *buf); ssize_t size_of_buffer = sizeof buffer; if
-    (write(fifo_descriptor, buffer, size_of_buffer) == -1) { fprintf(stderr,
-    "something went wrong while writing to the FIFO1 fil\n"); } else {
-      printf("Written successfully to FIFO1\nexiting now\n");
-    }
-  */
   close(socket_file_descriptor);
   exit(1);
 }

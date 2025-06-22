@@ -7,7 +7,6 @@
 
 #include "header.h"
 #include <stdio.h>
-#include <stdlib.h>
 
 void serve(const char *port);
 
@@ -110,6 +109,8 @@ void serve(const char *port) {
 
     fifo_descriptor = open("FIFO1", O_RDONLY);
 
+    printf("\n\n");
+
     if (read(fifo_descriptor, &version_number, sizeof(int)) < 0) {
       fprintf(stderr,
               "something went wrong while reading the version number from "
@@ -157,17 +158,23 @@ void serve(const char *port) {
              dest_addr.sa_data);
     }
 
-    if (read(fifo_descriptor, URL, sizeof(URL)) < 0) {
-      fprintf(stderr,
-              "something went wrong while reading the destination URL from "
-              "the client\n");
-    } else {
-      printf("destination URL gotten from the client : %s\n", URL);
-    }
     printf("\n\n");
+
+    /*
+     * will look into this later
+     *
+        if (read(fifo_descriptor, URL, sizeof(URL)) < 0) {
+          fprintf(stderr,
+                  "something went wrong while reading the destination URL from "
+                  "the client\n");
+        } else {
+          printf("destination URL gotten from the client : %s\n", URL);
+        }
+        printf("\n\n");
+    */
     // conneccting with the actual server to get the data from the site the
     // client requested
-
+    strcpy(URL, "httpforever.com");
     close(fifo_descriptor);
     close(socket_file_descriptor_2);
 
