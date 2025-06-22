@@ -1,7 +1,13 @@
+/*
+                   /_  __/___  _________ _/ (_)___  ___  _____
+                    / / / __ \/ ___/ __ `/ / /_  / / _ \/ ___/
+                   / / / /_/ / /  / /_/ / / / / /_/  __/ /
+                  /_/  \____/_/   \__,_/_/_/ /___/\___/_/
+*/
+
 #include "header.h"
 #include <stdio.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include <stdlib.h>
 
 void serve(const char *port);
 
@@ -100,7 +106,7 @@ void serve(const char *port) {
       exit(EXIT_FAILURE);
     }
 
-    printf("Established connection with the client\n");
+    printf("Established a connection with the client\n\n");
 
     fifo_descriptor = open("FIFO1", O_RDONLY);
 
@@ -112,12 +118,23 @@ void serve(const char *port) {
       printf("Version numebr gotten from the client : %d\n", version_number);
     }
 
+    if (version_number != 4) {
+      printf("Version of the socks protocol other than 4 not supported!\n");
+      exit(EXIT_FAILURE);
+    }
+
     if (read(fifo_descriptor, &command_code, sizeof(int)) < 0) {
       fprintf(stderr,
               "something went wrong while reading the command code from "
               "the client\n");
     } else {
       printf("command code gotten from the client : %d\n", command_code);
+    }
+
+    if (command_code != 1) {
+      printf("Only the connect command allowed for now\nfuture versions will "
+             "allow other commands\n");
+      exit(EXIT_FAILURE);
     }
 
     if (read(fifo_descriptor, &destination_port, sizeof(int)) < 0) {
@@ -139,16 +156,15 @@ void serve(const char *port) {
       printf("destination ip address gotten from the client : %s\n",
              dest_addr.sa_data);
     }
-    /*
-        if (read(fifo_descriptor, URL, sizeof(URL)) < 0) {
-          fprintf(stderr,
-                  "something went wrong while reading the destination URL from "
-                  "the client\n");
-        } else {
-          printf("destination URL address gotten from the client : %s\n", URL);
-        }
-    */
-    strcpy(URL, "httpforever.com");
+
+    if (read(fifo_descriptor, URL, sizeof(URL)) < 0) {
+      fprintf(stderr,
+              "something went wrong while reading the destination URL from "
+              "the client\n");
+    } else {
+      printf("destination URL gotten from the client : %s\n", URL);
+    }
+    printf("\n\n");
     // conneccting with the actual server to get the data from the site the
     // client requested
 

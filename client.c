@@ -1,4 +1,12 @@
+/*
+                   /_  __/___  _________ _/ (_)___  ___  _____
+                    / / / __ \/ ___/ __ `/ / /_  / / _ \/ ___/
+                   / / / /_/ / /  / /_/ / / / / /_/  __/ /
+                  /_/  \____/_/   \__,_/_/_/ /___/\___/_/
+*/
+
 #include "header.h"
+#include <stdio.h>
 
 struct something {
   int socket_file_descriptor;
@@ -33,9 +41,8 @@ int main(int argc, char *argv[]) {
   struct sockaddr destination_ip;
   int destination_port;
 
-  printf("Enter the version number you would like to use for the socks "
-         "connection\nyour options are (only 4 as of now more options will be "
-         "provided later) :\n ");
+  printf("Enter the version number\nNote only version 4 allowed in the current "
+         "version:\n");
   scanf("%d", &version_number);
 
   strcpy(destination_ip.sa_data, argv[1]);
