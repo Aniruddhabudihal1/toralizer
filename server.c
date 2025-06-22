@@ -1,4 +1,7 @@
 #include "header.h"
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 void serve(const char *port);
 
@@ -12,7 +15,7 @@ void serve(const char *port) {
   char cli_add[BUFF_LEN];
   int binding_return;
   struct addrinfo hints, *result, *temp;
-  ssize_t nread;
+
   int socket_file_descriptor, socket_file_descriptor_2, linked_lists;
   int listening_value;
   ssize_t sending_value;
@@ -21,12 +24,10 @@ void serve(const char *port) {
   socklen_t client_address_size;
   client_address_size = sizeof client_address.sin_addr;
 
-  char client_input[80];
-  size_t client_input_length = 80;
-  char client_output[40];
   int fifo_descriptor;
   char buffer[100];
   ssize_t buf_size = sizeof buffer;
+  char buffer2[100];
 
   memset(&hints, 0, sizeof hints);
   hints.ai_family = AF_INET;
@@ -97,13 +98,61 @@ void serve(const char *port) {
     printf("Establishing connection with the client\n");
 
     fifo_descriptor = open("FIFO1", O_RDONLY);
+    /*
+        if (read(fifo_descriptor, buffer, buf_size) < 0) {
+          fprintf(stderr, "something went wrong while reading the fifo file\n");
+          exit(EXIT_FAILURE);
+        } else {
+          printf("content recived from the client in the order Version number ,
+       " "command code, destination port, destination IP :\n%s\n", buffer);
+        }
+        strcpy(buffer2, buffer);
+        int version = buffer2[0];
+        printf("The version number is %d\n", version);
+    */
 
-    if (read(fifo_descriptor, buffer, buf_size) < 0) {
-      fprintf(stderr, "something went wrong while reading the fifo file\n");
-      exit(EXIT_FAILURE);
+    int version_number;
+    int command_code;
+    int destination_port;
+    struct sockaddr dest_addr;
+
+    if (read(fifo_descriptor, &version_number, sizeof(int)) < 0) {
+      fprintf(stderr,
+              "something went wrong while reading the version number from "
+              "the client\n");
     } else {
-      printf("%s\n", buffer);
+      printf("Version numebr gotten from the client : %d\n", version_number);
     }
+
+    if (read(fifo_descriptor, &command_code, sizeof(int)) < 0) {
+      fprintf(stderr,
+              "something went wrong while reading the command code from "
+              "the client\n");
+    } else {
+      printf("command code gotten from the client : %d\n", command_code);
+    }
+
+    if (read(fifo_descriptor, &destination_port, sizeof(int)) < 0) {
+
+      fprintf(stderr,
+              "something went wrong while reading the destination port from "
+              "the client\n");
+    } else {
+      printf("destination port gotten from the client : %d\n",
+             destination_port);
+    }
+
+    if (read(fifo_descriptor, &dest_addr.sa_data, sizeof(dest_addr.sa_data)) <
+        0) {
+      fprintf(
+          stderr,
+          "something went wrong while reading the destination ip address from "
+          "the client\n");
+    } else {
+      printf("destination ip address gotten from the client : %s\n",
+             dest_addr.sa_data);
+    }
+
     /*
         // so upto this point we have gotten the client address and now we need
        to

@@ -5,6 +5,13 @@ struct something {
   struct addrinfo *temp;
 };
 
+typedef struct return_format {
+  int versionnum;
+  int commandcode;
+  int destinationport;
+  struct sockaddr dest_addr;
+} rf;
+
 void client_call(int version_number, int command_code, int destination_port,
                  struct sockaddr stuff);
 struct something socket_maker(struct addrinfo *x, struct addrinfo *y);
@@ -35,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   printf("Enter the version number you would like to use for the socks "
          "connection\nyour options are (only 4 as of now more options will be "
-         "provided later) : ");
+         "provided later) :\n ");
   scanf("%d", &version_number);
 
   strcpy(destination_ip.sa_data, argv[1]);
@@ -106,16 +113,55 @@ void client_call(int version_number, int command_code, int destination_port,
 
   fifo_descriptor = open(pathname, O_RDWR);
 
-  char buffer[89];
-
-  sprintf(buffer, "%d %d %d %s", version_number, command_code, destination_port,
-          *buf);
-  ssize_t size_of_buffer = sizeof buffer;
-  if (write(fifo_descriptor, buffer, size_of_buffer) == -1) {
+  /*
+  if (write(fifo_descriptor, (char*)returning, 89) == -1) {
     fprintf(stderr, "something went wrong while writing to the FIFO1 fil\n");
   } else {
     printf("Written successfully to FIFO1\nexiting now\n");
   }
+  */
+
+  if (write(fifo_descriptor, &version_number, sizeof(int)) < 0) {
+    fprintf(stderr, "something went wrong while writing the version number to "
+                    "the server\n");
+  } else {
+    printf("Version numebr sent to the server\n");
+  }
+
+  if (write(fifo_descriptor, &command_code, sizeof(int)) < 0) {
+    fprintf(stderr, "something went wrong while writing the command code to "
+                    "the server\n");
+  } else {
+    printf("command code sent to the server\n");
+  }
+
+  if (write(fifo_descriptor, &destination_port, sizeof(int)) < 0) {
+    fprintf(stderr,
+            "something went wrong while writing the destination port to "
+            "the server\n");
+  } else {
+    printf("destination port sent to the server\n");
+  }
+
+  if (write(fifo_descriptor, &destination_stuff.sa_data,
+            sizeof(destination_stuff.sa_data)) < 0) {
+    fprintf(stderr,
+            "something went wrong while writing the destination ip address to "
+            "the server\n");
+  } else {
+    printf("destination server sent to the server\n");
+  }
+
+  /*
+    char buffer[89];
+
+    sprintf(buffer, "%d %d %d %s", version_number, command_code,
+    destination_port, *buf); ssize_t size_of_buffer = sizeof buffer; if
+    (write(fifo_descriptor, buffer, size_of_buffer) == -1) { fprintf(stderr,
+    "something went wrong while writing to the FIFO1 fil\n"); } else {
+      printf("Written successfully to FIFO1\nexiting now\n");
+    }
+  */
   close(socket_file_descriptor);
   exit(1);
 }
